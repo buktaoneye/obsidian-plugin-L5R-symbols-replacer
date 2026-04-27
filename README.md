@@ -1,12 +1,9 @@
-# L5R-symbols-replacer-obsidian
-An Obsidian plugin that displays common Legend of the Five Rings icons within your markdown pages.
-
 # L5R Symbols Replacer
 
-**Version:** 1.6.2  
+**Version:** 1.6.3
 **Author:** MF False
 
-A plugin for **Obsidian** that converts _Legend of the Five Rings_ shorthand symbols (like `(air)`, `(st)`, `(crane)`) into SVG icons both within the Obsidian editor and when published to **Obsidian Publish**.
+A plugin for **Obsidian** that converts _Legend of the Five Rings_ shorthand symbols (like `(air)`, `(st)`, `(crane)`) into SVG icons both within the Obsidian.md editor and when published to **Obsidian Publish**.
 
 It also provides commands to convert or revert these symbols across single notes or the entire vault.
 
@@ -39,8 +36,7 @@ It also provides commands to convert or revert these symbols across single notes
         vault:/L5R_Icons
         or
         vault:/Attachments/symbols
-        ```
-            
+        ```   
 
 ---
 
@@ -131,7 +127,6 @@ Before converting, populate your vault’s folder with SVGs.
     
 2. These can be used locally or published.
     
-
 ---
 
 ## Conversion Commands
@@ -153,8 +148,6 @@ To convert only the currently open note:
     ```
     ![[L5R_Icons/token.svg\|18]]
     ```
-    
-
 ---
 
 ### Convert Symbols → SVG (Entire Vault)
@@ -169,7 +162,6 @@ To process every note in your vault:
     
 2. The plugin scans all Markdown files and converts each valid `(token)`.
     
-
 ---
 
 ## Reverting Commands
@@ -206,7 +198,6 @@ To revert all embeds across every note:
     ```
     
 2. All matching embeds (based on your **Base URL**) will be reverted.
-    
 
 ---
 
@@ -272,3 +263,20 @@ The warrior ![[L5R_Icons/bushi.svg\|18]] takes the stance ![[L5R_Icons/kata.svg\
 The flames rise high (fire), the waves crash low (water).
 The warrior (bushi) takes the stance (kata).
 ```
+
+---
+
+## Obsidian Publish Integration (Without Conversion)
+
+Because Obsidian Publish does not run Community Plugins, shorthand codes like `(air)` won't be replaced with icons natively on your website. Previously, the only way to fix this was using the **Convert commands** to generate `![[L5R_Icons/air.svg]]` embeds.
+
+If you want to skip the convert/revert workflow entirely and keep clean `(air)` shortcodes, you can use Obsidian Publish's custom site logic!
+
+1. Create a file named `publish.js` in the root folder of your vault.
+2. Copy and paste the following snippet into `publish.js`:
+3. When syncing to **Obsidian Publish**, make sure to check the box next to `publish.js` and your icon folder to publish them. Your shortcodes will automatically be replaced with SVGs on the site!
+
+---
+
+
+

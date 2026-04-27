@@ -1,6 +1,8 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 const obsidian = require('obsidian');
+const { RangeSetBuilder } = require('@codemirror/state');
+const { Decoration, ViewPlugin, WidgetType } = require('@codemirror/view');
 
 const TOKENS = ["op","su","ex","st","skill","ring","earth","water","fire","air","void","kiho","maho","ninjutsu","ritual","shuji","invocation","kata","prereq","inversion","mantra","imperial","crab","crabx","crane","cranex","dragon","dragonx","lion","lionx","mantis","mantisx","phoenix","phoenixx","scorpion","scorpionx","tortoise","tortoisex","unicorn","unicornx","ronin","courtier","bushi","shugenja"];
 const TOKEN_SET = new Set(TOKENS);
@@ -17,12 +19,69 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+class L5RIconWidget extends WidgetType {
+  constructor(token, plugin) {
+    super();
+    this.token = token;
+    this.plugin = plugin;
+  }
+  eq(other) {
+    return other.token === this.token && other.plugin.settings.iconSize === this.plugin.settings.iconSize;
+  }
+  toDOM() {
+    return this.plugin.makeIcon(this.token);
+  }
+}
+
+function buildL5RExtension(plugin) {
+  const pattern = new RegExp(String.raw`\((op|su|ex|st|skill|ring|earth|water|fire|air|void|kiho|maho|ninjutsu|ritual|shuji|invocation|kata|prereq|inversion|mantra|imperial|crab|crabx|crane|cranex|dragon|dragonx|lion|lionx|mantis|mantisx|phoenix|phoenixx|scorpion|scorpionx|tortoise|tortoisex|unicorn|unicornx|ronin|courtier|bushi|shugenja)\)`, "g");
+
+  return ViewPlugin.fromClass(class {
+    constructor(view) {
+      this.decorations = this.buildDecorations(view);
+    }
+    update(update) {
+      if (update.docChanged || update.viewportChanged || update.selectionSet) {
+        this.decorations = this.buildDecorations(update.view);
+      }
+    }
+    buildDecorations(view) {
+      const builder = new RangeSetBuilder();
+      for (let { from, to } of view.visibleRanges) {
+        const text = view.state.doc.sliceString(from, to);
+        let match;
+        pattern.lastIndex = 0;
+        while ((match = pattern.exec(text))) {
+          const start = from + match.index;
+          const end = start + match[0].length;
+          
+          const isCursorInside = view.state.selection.ranges.some(r => 
+            (r.from >= start && r.from <= end) || (r.to >= start && r.to <= end)
+          );
+          
+          if (!isCursorInside) {
+             builder.add(start, end, Decoration.replace({
+               widget: new L5RIconWidget(match[1], plugin)
+             }));
+          }
+        }
+      }
+      return builder.finish();
+    }
+  }, {
+    decorations: v => v.decorations
+  });
+}
+
 class L5RSymbolsPlugin extends obsidian.Plugin {
   async onload() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     this.addSettingTab(new L5RSettingTab(this.app, this));
 
-    // Live render in Reading + Live Preview
+    // Live Preview Support (CodeMirror 6 extension)
+    this.registerEditorExtension(buildL5RExtension(this));
+
+    // Reading Mode Support
     this.registerMarkdownPostProcessor((el) => {
       try { this.process(el); } catch (e) { console.error("[L5R Symbols] postprocessor error:", e); }
     });
@@ -179,7 +238,7 @@ class L5RSymbolsPlugin extends obsidian.Plugin {
     const data = await this.app.vault.read(file);
     const replaced = data.replace(pattern, (_m, token) => {
       const fileName = FILE_FOR[token] || (token + ".svg");
-      return `![[${basePath.replace(/\/$/, "")}/${fileName}\\|${size}]]`;
+      return `![[${basePath.replace(/\/$/, "")}/${fileName}|${size}]]`;
     });
     if (replaced !== data) { await this.app.vault.modify(file, replaced); }
     new obsidian.Notice("L5R: Converted current note.");
@@ -212,7 +271,7 @@ class L5RSymbolsPlugin extends obsidian.Plugin {
     let changed = 0;
     for (const f of files) {
       const before = await this.app.vault.read(f);
-      const after = before.replace(pattern, (_m, token) => `![[${basePath.replace(/\/$/, "")}/${FILE_FOR[token]}\\|${size}]]`);
+      const after = before.replace(pattern, (_m, token) => `![[${basePath.replace(/\/$/, "")}/${FILE_FOR[token]}|${size}]]`);
       if (after !== before) { await this.app.vault.modify(f, after); changed++; }
     }
     new obsidian.Notice(`L5R: Converted vault notes: ${changed} changed.`);
@@ -241,12 +300,22 @@ class L5RSymbolsPlugin extends obsidian.Plugin {
 
   // --- Copy plugin-bundled assets to a public folder for Publish ---
   async copyBundledAssets() {
-    const targetFolder = "L5R_Icons";
+    const defaultDest = "L5R_Icons";
+    const userPath = this.getBasePath() || defaultDest;
+    const targetFolder = userPath;
+    
     const fs = this.app.vault.adapter;
     if (!this.app.vault.getAbstractFileByPath(targetFolder)) {
-      await this.app.vault.createFolder(targetFolder);
+      try {
+        await this.app.vault.createFolder(targetFolder);
+      } catch (e) {
+        // Folder might be deeply nested and parent doesn't exist, generic fallback
+        console.error("[L5R Symbols] Folder creation failed:", e);
+      }
     }
-    const assetsFolder = ".obsidian/plugins/l5r-symbols-replacer/assets";
+    
+    // Dynamically retrieve the correct manifest directory location instead of hardcoding
+    const assetsFolder = `${this.manifest.dir}/assets`;
     let files = [];
     try {
       const listing = await fs.list(assetsFolder);
