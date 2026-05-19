@@ -33,7 +33,7 @@ A plugin for **Obsidian** that converts _Legend of the Five Rings_ shorthand sym
 
 ## Installation for Obsidian Publish
 
-Because Obsidian Publish does not run Community Plugins, shorthand codes like `(air)` won't be replaced with icons natively on your website. Instead, you can use Obsidian Publish's custom site logic to automatically replace them with SVGs pulled directly from GitHub!
+Because Obsidian Publish does not run Community Plugins, shorthand codes like `(air)` won't be replaced with icons natively on your website. Instead, you can use Obsidian Publish's custom site logic to automatically replace them with SVGs.
 
 1. **Copy the publish script**
    The `publish.js` file is included inside the downloaded `l5r-symbols-replacer.zip` file. Extract and copy this file into the root folder of your vault.
