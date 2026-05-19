@@ -1,8 +1,9 @@
-const L5R_TOKENS = ["op","su","ex","st","skill","ring","earth","water","fire","air","void","kiho","maho","ninjutsu","ritual","shuji","invocation","kata","prereq","inversion","mantra","imperial","crab","crabx","crane","cranex","dragon","dragonx","lion","lionx","mantis","mantisx","phoenix","phoenixx","scorpion","scorpionx","tortoise","tortoisex","unicorn","unicornx","ronin","courtier","bushi","shugenja"];
+const L5R_TOKENS = ["op", "su", "ex", "st", "skill", "ring", "earth", "water", "fire", "air", "void", "kiho", "maho", "ninjutsu", "ritual", "shuji", "invocation", "kata", "prereq", "inversion", "mantra", "imperial", "crab", "crabx", "crane", "cranex", "dragon", "dragonx", "lion", "lionx", "mantis", "mantisx", "phoenix", "phoenixx", "scorpion", "scorpionx", "tortoise", "tortoisex", "unicorn", "unicornx", "ronin", "courtier", "bushi", "shugenja"];
 const l5rPattern = new RegExp(`\\((${L5R_TOKENS.join('|')})\\)`, "g");
 
-// Adjust to match the published folder containing your SVGs
-const L5R_BASE_URL = "/L5R_Icons";
+// Base URL where the SVG icons are hosted on GitHub
+// Using raw.githubusercontent.com ensures the SVG image data is loaded correctly instead of a GitHub webpage.
+const L5R_BASE_URL = "https://raw.githubusercontent.com/buktaoneye/L5R-symbols-replacer-obsidian/main/assets";
 
 function replaceL5RSymbols(rootNode) {
     const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
@@ -14,14 +15,14 @@ function replaceL5RSymbols(rootNode) {
 
         const text = node.nodeValue;
         if (!text || !l5rPattern.test(text)) continue;
-        
+
         l5rPattern.lastIndex = 0;
         const parts = [];
         let idx = 0, match;
 
         while ((match = l5rPattern.exec(text))) {
             if (idx < match.index) parts.push(document.createTextNode(text.slice(idx, match.index)));
-            
+
             const token = match[1]; // Extracts just the word inside the parenthesis
             const img = document.createElement("img");
             img.src = `${L5R_BASE_URL}/${token}.svg`;
